@@ -10,6 +10,7 @@ struct Position {
     z: f32,
 }
 
+#[derive(Component)]
 struct Player;
 
 // systems
@@ -55,7 +56,8 @@ fn setup(
         material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         ..default()
-    });
+    })
+    .insert(Player{});
     // light
     commands.spawn(PointLightBundle {
         point_light: PointLight {
