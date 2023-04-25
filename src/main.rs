@@ -15,13 +15,21 @@ struct Player;
 // systems
 
 fn keyboard_input(keys: Res<Input<KeyCode>>) {
-    if keys.just_pressed(KeyCode::Space) {
-        // Space was pressed
-        info!("Space was pressed");
+    if keys.just_pressed(KeyCode::W) {
+        info!("Up(W) was pressed");
     }
-    if keys.just_released(KeyCode::LControl) {
-        // Left Ctrl was released
-        info!("Left Ctrl was released");
+    if keys.just_pressed(KeyCode::A) {
+        info!("Left(A) was pressed");
+    }
+    if keys.just_pressed(KeyCode::S) {
+        info!("Down(S) was pressed");
+    }
+    if keys.just_pressed(KeyCode::D) {
+        info!("Right(D) was pressed");
+    }
+    if keys.just_released(KeyCode::W) {
+        // W was released
+        info!("W was released");
     }
     if keys.pressed(KeyCode::W) {
         // W is being held down
