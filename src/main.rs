@@ -14,6 +14,31 @@ struct Position {
 struct Player;
 
 // systems
+fn move_player_system(
+    keys: Res<Input<KeyCode>>,
+    mut query: Query<(&mut Transform, Option<&Player>)>,
+) {
+    for (mut transform, player) in query.iter_mut() {
+        if let Some(player) = player {
+            if keys.pressed(KeyCode::W) {
+                debug!("W is being held down");
+                transform.translation.z += 0.1;
+            }
+            if keys.pressed(KeyCode::A) {
+                debug!("A is being held down");
+                transform.translation.x -= 0.1;
+            }
+            if keys.pressed(KeyCode::S) {
+                debug!("S is being held down");
+                transform.translation.z -= 0.1;
+            }
+            if keys.pressed(KeyCode::D) {
+                debug!("D is being held down");
+                transform.translation.x += 0.1;
+            }
+        }
+    }
+}
 
 fn keyboard_input(keys: Res<Input<KeyCode>>) {
     if keys.just_pressed(KeyCode::W) {
@@ -51,13 +76,14 @@ fn setup(
         ..default()
     });
     // cube
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_xyz(0.0, 0.5, 0.0),
-        ..default()
-    })
-    .insert(Player{});
+    commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            ..default()
+        })
+        .insert(Player {});
     // light
     commands.spawn(PointLightBundle {
         point_light: PointLight {
@@ -82,5 +108,6 @@ fn main() {
         .add_startup_system(setup)
         .add_system(bevy::window::close_on_esc)
         .add_system(keyboard_input)
+        .add_system(move_player_system)
         .run();
 }
