@@ -2,64 +2,58 @@ use bevy::prelude::*;
 
 // components
 
-// right handed, y axis == up
-#[derive(Component)]
-struct Position {
-    x: f32,
-    y: f32,
-    z: f32,
-}
-
 #[derive(Component)]
 struct Player;
 
+#[derive(Component)]
+struct FollowPlayer;
+
+struct PlayerMoved(Transform);
+
 // systems
+
+// TODO: Player and FollowPlayer does not make sure there is only one Player at a time
+
+/// move player with wasd
 fn move_player_system(
     keys: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Transform, Option<&Player>)>,
+    mut query: Query<(&mut Transform, With<Player>)>,
+    mut ev_player_moved: EventWriter<PlayerMoved>,
 ) {
-    for (mut transform, player) in query.iter_mut() {
-        if let Some(player) = player {
-            if keys.pressed(KeyCode::W) {
-                debug!("W is being held down");
-                transform.translation.z += 0.1;
-            }
-            if keys.pressed(KeyCode::A) {
-                debug!("A is being held down");
-                transform.translation.x -= 0.1;
-            }
-            if keys.pressed(KeyCode::S) {
-                debug!("S is being held down");
-                transform.translation.z -= 0.1;
-            }
-            if keys.pressed(KeyCode::D) {
-                debug!("D is being held down");
-                transform.translation.x += 0.1;
-            }
+    for (mut transform, _) in query.iter_mut() {
+        if keys.pressed(KeyCode::W) {
+            debug!("W is being held down");
+            transform.translation.z -= 0.1;
         }
+        if keys.pressed(KeyCode::A) {
+            debug!("A is being held down");
+            transform.translation.x -= 0.1;
+        }
+        if keys.pressed(KeyCode::S) {
+            debug!("S is being held down");
+            transform.translation.z += 0.1;
+        }
+        if keys.pressed(KeyCode::D) {
+            debug!("D is being held down");
+            transform.translation.x += 0.1;
+        }
+        ev_player_moved.send(PlayerMoved(transform.clone()))
     }
 }
 
-fn keyboard_input(keys: Res<Input<KeyCode>>) {
-    if keys.just_pressed(KeyCode::W) {
-        info!("Up(W) was pressed");
-    }
-    if keys.just_pressed(KeyCode::A) {
-        info!("Left(A) was pressed");
-    }
-    if keys.just_pressed(KeyCode::S) {
-        info!("Down(S) was pressed");
-    }
-    if keys.just_pressed(KeyCode::D) {
-        info!("Right(D) was pressed");
-    }
-    if keys.just_released(KeyCode::W) {
-        // W was released
-        info!("W was released");
-    }
-    if keys.pressed(KeyCode::W) {
-        // W is being held down
-        info!("W is being held down");
+/// follow a player: follow position and look at
+fn follow_player_system(
+    mut follow_player_query: Query<(&mut Transform, With<FollowPlayer>)>,
+    mut ev_player_moved: EventReader<PlayerMoved>,
+) {
+    for ev in ev_player_moved.iter() {
+        for (mut transform, _) in follow_player_query.iter_mut() {
+            // TODO: adjust translation to follow at a distance. current one is hacky constant
+            transform.look_at(ev.0.translation, Vec3::Y);
+            transform.translation.x = ev.0.translation.x - 2.0;
+            transform.translation.y = ev.0.translation.y + 2.5;
+            transform.translation.z = ev.0.translation.z + 5.0;
+        }
     }
 }
 
@@ -95,19 +89,22 @@ fn setup(
         ..default()
     });
     // camera
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+    commands
+        .spawn(Camera3dBundle {
+            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        })
+        .insert(FollowPlayer {});
 }
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb(0.9, 0.3, 0.6))) // not working yet
+        .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.5)))
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_system(bevy::window::close_on_esc)
-        .add_system(keyboard_input)
+        .add_event::<PlayerMoved>()
         .add_system(move_player_system)
+        .add_system(follow_player_system)
         .run();
 }
