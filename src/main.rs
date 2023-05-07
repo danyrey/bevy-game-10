@@ -1,5 +1,3 @@
-use std::ops::Mul;
-
 use bevy::prelude::*;
 
 // components
@@ -25,19 +23,31 @@ fn move_player_system(
     for (mut transform, _) in query.iter_mut() {
         if keys.pressed(KeyCode::W) {
             debug!("W is being held down");
-            transform.translation.z -= 0.1;
+            let translate = transform.forward() * 0.1;
+            transform.translation += translate;
         }
         if keys.pressed(KeyCode::A) {
             debug!("A is being held down");
-            transform.translation.x -= 0.1;
+            let translate = transform.left() * 0.1;
+            transform.translation += translate;
         }
         if keys.pressed(KeyCode::S) {
             debug!("S is being held down");
-            transform.translation.z += 0.1;
+            let translate = transform.back() * 0.1;
+            transform.translation += translate;
         }
         if keys.pressed(KeyCode::D) {
             debug!("D is being held down");
-            transform.translation.x += 0.1;
+            let translate = transform.right() * 0.1;
+            transform.translation += translate;
+        }
+        if keys.pressed(KeyCode::J) {
+            debug!("J is being held down");
+            transform.rotate_y(0.1);
+        }
+        if keys.pressed(KeyCode::K) {
+            debug!("K is being held down");
+            transform.rotate_y(-0.1);
         }
         ev_player_moved.send(PlayerMoved(transform.clone()))
     }
