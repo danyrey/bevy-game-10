@@ -1,3 +1,5 @@
+use std::ops::Mul;
+
 use bevy::prelude::*;
 
 // components
@@ -48,11 +50,18 @@ fn follow_player_system(
 ) {
     for ev in ev_player_moved.iter() {
         for (mut transform, _) in follow_player_query.iter_mut() {
-            // TODO: adjust translation to follow at a distance. current one is hacky constant
             transform.look_at(ev.0.translation, Vec3::Y);
-            transform.translation.x = ev.0.translation.x - 2.0;
+            let distance = ev.0.translation - transform.translation;
+            let min_distance = 4.0;
+            let delta_factor = distance.length() - min_distance;
+            let new_translation = transform.translation + (transform.forward() * delta_factor);
+
+            transform.translation.x = new_translation.x;
             transform.translation.y = ev.0.translation.y + 2.5;
-            transform.translation.z = ev.0.translation.z + 5.0;
+            transform.translation.z = new_translation.z;
+
+            debug!("distance: {:?}", distance.length());
+            debug!("forward: {:?}", transform.forward());
         }
     }
 }
