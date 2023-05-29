@@ -27,6 +27,7 @@ struct PlayerMoved(Transform);
 // TODO: system ordering, make sure inputs run before everything else
 
 // TODO: Player and FollowPlayer does not make sure there is only one Player at a time
+// TODO: jerky movement after pressing a direction currently
 
 /// move player with wasd
 fn move_player_system(
@@ -136,46 +137,69 @@ impl Material for LineMaterial {
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: (ResMut<Assets<StandardMaterial>>,ResMut<Assets<LineMaterial>>),
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // plane
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-        //material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        ..default()
-    })
-    .insert(Name::new("Plane"));
-    // cube
     commands
         .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-            material: materials.0.add(Color::rgb(0.8, 0.7, 0.6).into()),
+            mesh: meshes.add(shape::Plane::from_size(5.0).into()),
+            //material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            ..default()
+        })
+        .insert(Name::new("Plane"));
+    // cube
+    let player_parent = commands
+        .spawn(Player {})
+        .insert(Name::new("Player"))
+        .insert(SpatialBundle {
             transform: Transform::from_xyz(0.0, 0.5, 0.0),
             ..default()
         })
-        .insert(Name::new("Player"))
-        .insert(Player {});
+        .id();
+    let player_cube = commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+            //transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            ..default()
+        })
+        .insert(Name::new("Player Cube"))
+        .id();
+
     // line
     // Spawn a line strip that goes from point to point
-    commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(Mesh::from(LineList {
-            lines: vec![(Vec3::ZERO, Vec3::new(0.0, 10.0, 0.0))],
-        })),
-        //transform: Transform::from_xyz(0.5, 0.0, 0.0),
-        material: materials.1.add(LineMaterial { color: Color::BLUE }),
-        ..default()
-    })
-        .insert(Name::new("Y Axis"));
-    // light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
+    //.insert(MaterialMeshBundle {
+    let player_axis = commands
+        .spawn(MaterialMeshBundle {
+            mesh: meshes.add(Mesh::from(LineList {
+                lines: vec![
+                    (Vec3::ZERO, Vec3::new(10.0, 0.0, 0.0)),
+                    (Vec3::ZERO, Vec3::new(0.0, 10.0, 0.0)),
+                    (Vec3::ZERO, Vec3::new(0.0, 0.0, 10.0)),
+                ],
+            })),
+            //transform: Transform::from_xyz(0.5, 0.0, 0.0),
+            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()), // TODO: set emissive color
             ..default()
-        },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    })
+        })
+        .insert(Name::new("Axis"))
+        .id();
+
+    commands
+        .entity(player_parent)
+        .push_children(&[player_cube, player_axis]);
+
+    // light
+    commands
+        .spawn(PointLightBundle {
+            point_light: PointLight {
+                intensity: 1500.0,
+                shadows_enabled: true,
+                ..default()
+            },
+            transform: Transform::from_xyz(4.0, 8.0, 4.0),
+            ..default()
+        })
         .insert(Name::new("Main Point Light"));
     // camera
     commands
