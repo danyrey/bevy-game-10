@@ -142,28 +142,36 @@ fn setup(
     // plane
     commands
         .spawn(PbrBundle {
-            mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-            //material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            mesh: meshes.add(shape::Plane::from_size(15.0).into()),
+            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
             ..default()
         })
         .insert(Name::new("Plane"));
-    // cube
+    // player == box
     let player_parent = commands
         .spawn(Player {})
         .insert(Name::new("Player"))
         .insert(SpatialBundle {
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         })
         .id();
-    let player_cube = commands
+    let player_box = commands
         .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            //mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            mesh: meshes.add(Mesh::from(shape::Box {
+                min_x: -0.5,
+                max_x: 0.5,
+                min_y: 0.0,
+                max_y: 2.0,
+                min_z: -0.25,
+                max_z: 0.25,
+            })),
             material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
             //transform: Transform::from_xyz(0.0, 0.5, 0.0),
             ..default()
         })
-        .insert(Name::new("Player Cube"))
+        .insert(Name::new("Player Box"))
         .id();
 
     // line
@@ -173,12 +181,13 @@ fn setup(
         .spawn(MaterialMeshBundle {
             mesh: meshes.add(Mesh::from(LineList {
                 lines: vec![
-                    (Vec3::ZERO, Vec3::new(10.0, 0.0, 0.0)),
-                    (Vec3::ZERO, Vec3::new(0.0, 10.0, 0.0)),
-                    (Vec3::ZERO, Vec3::new(0.0, 0.0, 10.0)),
+                    (Vec3::ZERO, Vec3::X * 10.0),
+                    (Vec3::ZERO, Vec3::Y * 10.0),
+                    (Vec3::ZERO, Vec3::Z * 10.0),
                 ],
             })),
             //transform: Transform::from_xyz(0.5, 0.0, 0.0),
+            transform: Transform::from_xyz(0.0, 1.0, 0.0),
             material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()), // TODO: set emissive color
             ..default()
         })
@@ -187,7 +196,7 @@ fn setup(
 
     commands
         .entity(player_parent)
-        .push_children(&[player_cube, player_axis]);
+        .push_children(&[player_box, player_axis]);
 
     // light
     commands
@@ -204,7 +213,7 @@ fn setup(
     // camera
     commands
         .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(-2.0, 2.5, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         })
         .insert(FollowPlayer {})
