@@ -22,6 +22,36 @@ struct FollowPlayer;
 
 struct PlayerMoved(Transform);
 
+/// move player with gamepad
+fn gamepad_move_player(
+    gamepads: Res<Gamepads>,
+    _button_inputs: Res<Input<GamepadButton>>,
+    _button_axes: Res<Axis<GamepadButton>>,
+    axes: Res<Axis<GamepadAxis>>,
+    mut query: Query<(&mut Transform, With<Player>)>,
+    mut ev_player_moved: EventWriter<PlayerMoved>,
+) {
+    for gamepad in gamepads.iter() {
+        for (mut transform, _) in query.iter_mut() {
+            let left_stick_x = axes
+                .get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX))
+                .unwrap();
+            let left_stick_y = axes
+                .get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickY))
+                .unwrap();
+            let right_stick_x = axes
+                .get(GamepadAxis::new(gamepad, GamepadAxisType::RightStickX))
+                .unwrap();
+
+            let translate = transform.forward() * 0.1 * left_stick_y + transform.right() * 0.1 * left_stick_x;
+            transform.translation += translate;
+            transform.rotate_y(-0.1 * right_stick_x);
+
+            ev_player_moved.send(PlayerMoved(transform.clone()))
+        }
+    }
+}
+
 // systems
 
 // TODO: system ordering, make sure inputs run before everything else
@@ -230,6 +260,7 @@ fn main() {
         .add_system(bevy::window::close_on_esc)
         .add_event::<PlayerMoved>()
         .add_system(move_player_system)
+        .add_system(gamepad_move_player)
         .add_system(follow_player_system)
         .run();
 }
